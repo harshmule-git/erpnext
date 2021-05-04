@@ -1,5 +1,4 @@
 {
- "actions": [],
  "creation": "2013-03-05 09:11:06",
  "doctype": "DocType",
  "document_type": "Document",
@@ -159,6 +158,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "depends_on": "billable",
    "fieldname": "billing_hours",
    "fieldtype": "Float",
@@ -231,8 +231,7 @@
  ],
  "idx": 1,
  "istable": 1,
- "links": [],
- "modified": "2020-07-28 22:04:44.829666",
+ "modified": "2021-05-04 23:06:17.088906",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Timesheet Detail",
