@@ -75,7 +75,14 @@ frappe.query_reports["Stock Ledger"] = {
 			"fieldname":"project",
 			"label": __("Project"),
 			"fieldtype": "Link",
-			"options": "Project"
+			"options": "Project",
+			"hidden": 1
+		},
+		{
+			"fieldname": "package_tag",
+			"label": __("Package Tag"),
+			"fieldtype": "Link",
+			"options": "Package Tag"
 		},
 		{
 			"fieldname":"include_uom",

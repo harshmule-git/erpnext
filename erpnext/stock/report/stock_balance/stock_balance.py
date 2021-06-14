@@ -42,9 +42,12 @@ def execute(filters=None):
 
 	_func = lambda x: x[1]
 
-	for (company, item, warehouse) in sorted(iwb_map):
+	"""
+		add batch_no and package tag as keys in iwb_map dict to show data for both in the report.
+	""" 
+	for (company, item, warehouse, batch_no, package_tag) in sorted(iwb_map):
 		if item_map.get(item):
-			qty_dict = iwb_map[(company, item, warehouse)]
+			qty_dict = iwb_map[(company, item, warehouse, batch_no, package_tag)]
 			item_reorder_level = 0
 			item_reorder_qty = 0
 			if item + warehouse in item_reorder_detail_map:
@@ -57,6 +60,8 @@ def execute(filters=None):
 				'company': company,
 				'reorder_level': item_reorder_level,
 				'reorder_qty': item_reorder_qty,
+				'batch_no': batch_no,
+				'package_tag': package_tag
 			}
 			report_data.update(item_map[item])
 			report_data.update(qty_dict)
@@ -90,9 +95,12 @@ def get_columns(filters):
 	"""return columns"""
 
 	columns = [
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
+		{"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 100, "hidden": 1},
+		{"label": _("Item"), "fieldname": "item_code", "width": 100},
 		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
+		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},		
+		{"label": _("Package Tag"), "fieldname": "package_tag", "fieldtype": "Link", "options": "Package Tag", "width": 100},
 		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 100},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
 		{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
@@ -156,7 +164,7 @@ def get_stock_ledger_entries(filters, items):
 
 	return frappe.db.sql("""
 		select
-			sle.item_code, warehouse, sle.posting_date, sle.actual_qty, sle.valuation_rate,
+			sle.item_code, sle.batch_no, sle.package_tag, warehouse, sle.posting_date, sle.actual_qty, sle.valuation_rate,
 			sle.company, sle.voucher_type, sle.qty_after_transaction, sle.stock_value_difference,
 			sle.item_code as name, sle.voucher_no
 		from
@@ -173,7 +181,7 @@ def get_item_warehouse_map(filters, sle):
 	float_precision = cint(frappe.db.get_default("float_precision")) or 3
 
 	for d in sle:
-		key = (d.company, d.item_code, d.warehouse)
+		key = (d.company, d.item_code, d.warehouse, d.batch_no, d.package_tag)
 		if key not in iwb_map:
 			iwb_map[key] = frappe._dict({
 				"opening_qty": 0.0, "opening_val": 0.0,
@@ -183,7 +191,7 @@ def get_item_warehouse_map(filters, sle):
 				"val_rate": 0.0
 			})
 
-		qty_dict = iwb_map[(d.company, d.item_code, d.warehouse)]
+		qty_dict = iwb_map[(d.company, d.item_code, d.warehouse, d.batch_no, d.package_tag)]
 
 		if d.voucher_type == "Stock Reconciliation":
 			qty_diff = flt(d.qty_after_transaction) - flt(qty_dict.bal_qty)
@@ -213,8 +221,8 @@ def get_item_warehouse_map(filters, sle):
 	return iwb_map
 
 def filter_items_with_no_transactions(iwb_map, float_precision):
-	for (company, item, warehouse) in sorted(iwb_map):
-		qty_dict = iwb_map[(company, item, warehouse)]
+	for (company, item, warehouse, batch_no, package_tag) in sorted(iwb_map):
+		qty_dict = iwb_map[(company, item, warehouse, batch_no, package_tag)]
 
 		no_transactions = True
 		for key, val in iteritems(qty_dict):

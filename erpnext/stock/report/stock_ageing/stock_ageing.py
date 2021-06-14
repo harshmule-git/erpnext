@@ -32,6 +32,15 @@ def execute(filters=None):
 		if filters.get("show_warehouse_wise_stock"):
 			row.append(details.warehouse)
 
+		"""
+			add data for batch_no and package_tag if selected in filters
+		"""
+		if filters.get("batch_no"): 
+			row.append(details.batch_no)
+
+		if filters.get("package_tag"):
+			row.append(details.package_tag)
+		
 		row.extend([item_dict.get("total_qty"), average_age,
 			earliest_age, latest_age, details.stock_uom])
 
@@ -60,33 +69,37 @@ def get_columns(filters):
 			"fieldname": "item_code",
 			"fieldtype": "Link",
 			"options": "Item",
-			"width": 100
+			"width": 100,
+			"hidden": 1
 		},
 		{
 			"label": _("Item Name"),
 			"fieldname": "item_name",
 			"fieldtype": "Data",
-			"width": 100
+			"width": 120
 		},
 		{
 			"label": _("Description"),
 			"fieldname": "description",
 			"fieldtype": "Data",
-			"width": 200
+			"width": 200,
+			"hidden": 1
 		},
 		{
 			"label": _("Item Group"),
 			"fieldname": "item_group",
 			"fieldtype": "Link",
 			"options": "Item Group",
-			"width": 100
+			"width": 100,
+			"hidden": 1
 		},
 		{
 			"label": _("Brand"),
 			"fieldname": "brand",
 			"fieldtype": "Link",
 			"options": "Brand",
-			"width": 100
+			"width": 100,
+			"hidden": 1
 		}]
 
 	if filters.get("show_warehouse_wise_stock"):
@@ -95,6 +108,24 @@ def get_columns(filters):
 			"fieldname": "warehouse",
 			"fieldtype": "Link",
 			"options": "Warehouse",
+			"width": 150
+		}]
+	
+	if filters.get("batch_no"):
+		columns+=[{
+			"label": _("Batch No"),
+			"fieldname": "batch_no",
+			"fieldtype": "Link",
+			"options": "Batch",
+			"width": 100
+		}]
+	
+	if filters.get("package_tag"):
+		columns+=[{
+			"label": _("Package tag"),
+			"fieldname": "package_tag",
+			"fieldtype": "Link",
+			"options": "Package Tag",
 			"width": 100
 		}]
 
@@ -112,7 +143,7 @@ def get_columns(filters):
 			"width": 100
 		},
 		{
-			"label": _("Earliest"),
+			"label": _("Oldest"),
 			"fieldname": "earliest",
 			"fieldtype": "Int",
 			"width": 80
@@ -201,7 +232,7 @@ def get_fifo_queue(filters, sle=None):
 def get_stock_ledger_entries(filters):
 	return frappe.db.sql("""select
 			item.name, item.item_name, item_group, brand, description, item.stock_uom,
-			actual_qty, posting_date, voucher_type, voucher_no, serial_no, batch_no, qty_after_transaction, warehouse
+			actual_qty, posting_date, voucher_type, voucher_no, serial_no, batch_no, package_tag, qty_after_transaction, warehouse
 		from `tabStock Ledger Entry` sle,
 			(select name, item_name, description, stock_uom, brand, item_group
 				from `tabItem` {item_conditions}) item

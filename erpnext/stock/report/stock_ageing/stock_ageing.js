@@ -41,6 +41,18 @@ frappe.query_reports["Stock Ageing"] = {
 			"label": __("Show Warehouse-wise Stock"),
 			"fieldtype": "Check",
 			"default": 0
+		},
+		{
+			"fieldname":"batch_no",
+			"label": __("Batch No"),
+			"fieldtype": "Check",
+			"default": 0
+		},
+		{
+			"fieldname":"package_tag",
+			"label": __("Package Tag"),
+			"fieldtype": "Check",
+			"default": 0
 		}
 	]
 }

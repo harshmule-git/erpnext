@@ -70,30 +70,32 @@ def execute(filters=None):
 
 def get_columns():
 	columns = [
-		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
 		{"label": _("Item Name"), "fieldname": "item_name", "width": 100},
-		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
-		{"label": _("Date"), "fieldname": "date", "fieldtype": "Datetime", "width": 150},
-		{"label": _("In Qty"), "fieldname": "in_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("Out Qty"), "fieldname": "out_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("Balance Qty"), "fieldname": "qty_after_transaction", "fieldtype": "Float", "width": 100, "convertible": "qty"},
-		{"label": _("Finished Product"), "fieldname": "finished_product", "width": 100},
-		{"label": _("Finished Qty"), "fieldname": "finished_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
-		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 150},
-		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 150},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
-		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100},
-		{"label": _("Description"), "fieldname": "description", "width": 200},
-		{"label": _("Incoming Rate"), "fieldname": "incoming_rate", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency", "convertible": "rate"},
-		{"label": _("Valuation Rate"), "fieldname": "valuation_rate", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency", "convertible": "rate"},
-		{"label": _("Balance Value"), "fieldname": "stock_value", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency"},
-		{"label": _("Voucher Type"), "fieldname": "voucher_type", "width": 110},
-		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 100},
 		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},
-		{"label": _("Serial #"), "fieldname": "serial_no", "fieldtype": "Link", "options": "Serial No", "width": 100},
-		{"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 100},
-		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 110}
+		{"label": _("Package Tag"), "fieldname": "package_tag", "fieldtype": "Link", "options": "Package Tag", "width": 100},
+		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
+		{"label": _("In Qty"), "fieldname": "in_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+		{"label": _("Incoming Rate"), "fieldname": "incoming_rate", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency", "convertible": "rate"},
+		{"label": _("Out Qty"), "fieldname": "out_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+		{"label": _("Valuation Rate"), "fieldname": "valuation_rate", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency", "convertible": "rate"},
+		{"label": _("Balance Qty"), "fieldname": "qty_after_transaction", "fieldtype": "Float", "width": 100, "convertible": "qty"},
+		{"label": _("Balance Value"), "fieldname": "stock_value", "fieldtype": "Currency", "width": 110, "options": "Company:company:default_currency"},
+		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 150},
+		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 150},
+		{"label": _("Voucher Type"), "fieldname": "voucher_type", "width": 110},
+		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 110},
+
+		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100, "hidden": 1},
+		{"label": _("Date"), "fieldname": "date", "fieldtype": "Datetime", "width": 150, "hidden": 1},
+		{"label": _("Finished Product"), "fieldname": "finished_product", "width": 100, "hidden": 1},
+		{"label": _("Finished Qty"), "fieldname": "finished_qty", "fieldtype": "Float", "width": 100, "convertible": "qty", "hidden": 1},
+		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100, "hidden": 1},
+		{"label": _("Description"), "fieldname": "description", "width": 200, "hidden": 1},
+		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 100, "hidden": 1},
+		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100, "hidden": 1},
+		{"label": _("Serial #"), "fieldname": "serial_no", "fieldtype": "Link", "options": "Serial No", "width": 100, "hidden": 1},
+		{"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 100, "hidden":1},
 	]
 
 	return columns
@@ -120,7 +122,7 @@ def get_stock_ledger_entries(filters, items):
 			batch_no,
 			serial_no,
 			company,
-			project,
+			package_tag,
 			stock_value_difference
 		FROM
 			`tabStock Ledger Entry` sle
@@ -194,8 +196,8 @@ def get_sle_conditions(filters):
 		conditions.append("voucher_no=%(voucher_no)s")
 	if filters.get("batch_no"):
 		conditions.append("batch_no=%(batch_no)s")
-	if filters.get("project"):
-		conditions.append("project=%(project)s")
+	if filters.get("package_tag"):
+		conditions.append("package_tag=%(package_tag)s")   # add condition to filter data by package tag
 
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
 
