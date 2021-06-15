@@ -42,9 +42,7 @@ def execute(filters=None):
 
 	_func = lambda x: x[1]
 
-	"""
-		add batch_no and package tag as keys in iwb_map dict to show data for both in the report.
-	""" 
+	# add batch_no and package tag as keys in iwb_map dict to show data for both in the report.
 	for (company, item, warehouse, batch_no, package_tag) in sorted(iwb_map):
 		if item_map.get(item):
 			qty_dict = iwb_map[(company, item, warehouse, batch_no, package_tag)]

@@ -32,9 +32,7 @@ def execute(filters=None):
 		if filters.get("show_warehouse_wise_stock"):
 			row.append(details.warehouse)
 
-		"""
-			add data for batch_no and package_tag if selected in filters
-		"""
+		# add data for batch_no and package_tag if selected in filters
 		if filters.get("batch_no"): 
 			row.append(details.batch_no)
 
