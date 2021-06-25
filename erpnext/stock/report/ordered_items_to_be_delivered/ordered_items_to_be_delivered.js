@@ -1,9 +1,10 @@
 frappe.query_reports['Ordered Items To Be Delivered'] = {
     "filters": [
         {
-            "fieldname":"customer",
-            "label": __("Customer"),
-            "fieldtype": "Data",
+            "fieldname":"customer_name",
+            "label": __("Customer Name"),
+            "fieldtype": "Link",
+            "options": "Customer",
             "width": "80",
         },
         {
@@ -16,7 +17,8 @@ frappe.query_reports['Ordered Items To Be Delivered'] = {
         {
             "fieldname": "item_name",
             "label": __("Item Name"),
-            "fieldtype": "Data",
+            "fieldtype": "Link",
+            "options": "Item",
             "width": "80"
         }
     ]
