@@ -24,6 +24,13 @@ frappe.query_reports["Item-wise Sales Register"] = {
 			"options": "Customer"
 		},
 		{
+			"fieldname": "item_name",
+			"label": __("Item Name"),
+			"fieldtype": "Link",
+			"options": "Item"
+
+		},
+		{
 			"fieldname": "company",
 			"label": __("Company"),
 			"fieldtype": "Link",
