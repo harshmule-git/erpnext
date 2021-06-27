@@ -4,10 +4,17 @@
 frappe.query_reports["Item-wise Sales Register"] = {
 	"filters": [
 		{
-			"fieldname": "date_range",
-			"label": __("Date Range"),
-			"fieldtype": "DateRange",
-			"default": [frappe.datetime.add_months(frappe.datetime.get_today(),-1), frappe.datetime.get_today()],
+			"fieldname": "start_date",
+			"label": __("Start Date"),
+			"fieldtype": "Date",
+			"default": frappe.datetime.add_months(frappe.datetime.get_today(),-1),
+			"reqd": 1
+		},
+		{
+			"fieldname": "end_date",
+			"label": __("End Date"),
+			"fieldtype": "Date",
+			"default": frappe.datetime.get_today(),
 			"reqd": 1
 		},
 		{
@@ -36,22 +43,10 @@ frappe.query_reports["Item-wise Sales Register"] = {
 			"options": "Warehouse"
 		},
 		{
-			"fieldname": "brand",
-			"label": __("Brand"),
-			"fieldtype": "Link",
-			"options": "Brand"
-		},
-		{
-			"fieldname": "item_group",
-			"label": __("Item Group"),
-			"fieldtype": "Link",
-			"options": "Item Group"
-		},
-		{
 			"label": __("Group By"),
 			"fieldname": "group_by",
 			"fieldtype": "Select",
-			"options": ["Customer Group", "Customer", "Item Group", "Item", "Territory", "Invoice"]
+			"options": ["Customer", "Item"]
 		}
 	],
 	"formatter": function(value, row, column, data, default_formatter) {
