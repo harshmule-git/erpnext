@@ -14,7 +14,6 @@ def execute(filters=None):
 
 def _execute(filters=None, additional_table_columns=None, additional_query_columns=None):
 	if not filters: filters = {}
-	# filters.update({"from_date": filters.get("date_range") and filters.get("date_range")[0], "to_date": filters.get("date_range") and filters.get("date_range")[1]})
 	columns = get_columns(additional_table_columns, filters)
 
 	company_currency = frappe.get_cached_value('Company',  filters.get("company"),  "default_currency")
@@ -243,7 +242,7 @@ def get_conditions(filters):
 				and ifnull(`tabSales Invoice Payment`.mode_of_payment, '') = %(mode_of_payment)s)"""
 	
 	if filters.get("item_name"):
-		conditions +=  """and ifnull(`tabSales Invoice Item`.item_code, '') = %(item_name)s"""
+		conditions += """and ifnull(`tabSales Invoice Item`.item_code, '') = %(item_name)s"""
 
 	if filters.get("warehouse"):
 		conditions +=  """and ifnull(`tabSales Invoice Item`.warehouse, '') = %(warehouse)s"""
@@ -319,8 +318,7 @@ def get_grand_total(filters, doctype):
 		SUM(`tab{0}`.base_grand_total)
 		FROM `tab{0}`
 		WHERE `tab{0}`.docstatus = 1
-		and posting_date between %s and %s
-		""".format(doctype), (filters.get('start_date'), filters.get('end_date')))[0][0] #nosec
+		and posting_date between %s and %s """.format(doctype), (filters.get('start_date'), filters.get('end_date')))[0][0] #nosec
 
 def get_deducted_taxes():
 	return frappe.db.sql_list("select name from `tabPurchase Taxes and Charges` where add_deduct_tax = 'Deduct'")
