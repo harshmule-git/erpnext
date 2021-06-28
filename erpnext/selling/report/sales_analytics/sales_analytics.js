@@ -22,11 +22,11 @@ frappe.query_reports["Sales Analytics"] = {
 		},
 		{
 			fieldname: "value_quantity",
-			label: __("Value Or Qty"),
+			label: __("Value of Goods Or Qty of Goods"),
 			fieldtype: "Select",
 			options: [
-				{ "value": "Value", "label": __("Value") },
-				{ "value": "Quantity", "label": __("Quantity") },
+				{ "value": "Value", "label": __("Value of Goods") },
+				{ "value": "Quantity", "label": __("Quantity of Goods") },
 			],
 			default: "Value",
 			reqd: 1
