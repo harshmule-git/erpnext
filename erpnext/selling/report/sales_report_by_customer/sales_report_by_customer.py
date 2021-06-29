@@ -287,9 +287,9 @@ class Analytics(object):
 		if self.filters.range == 'Weekly':
 			period = "Week " + str(posting_date.isocalendar()[1]) + ", " + str(posting_date.year)
 		elif self.filters.range == 'Monthly':
-			period = str(self.months[posting_date.month - 1]) + " " + str(posting_date.year)
+			period = str(self.months[posting_date.month - 1]) + ", " + str(posting_date.year)
 		elif self.filters.range == 'Quarterly':
-			period = "Q" + str(((posting_date.month - 1) // 3) + 1) + " " + str(posting_date.year)
+			period = "Q" + str(((posting_date.month - 1) // 3) + 1) + ", " + str(posting_date.year)
 		else:
 			year = get_fiscal_year(posting_date, company=self.filters.company)
 			period = str(year[0])
