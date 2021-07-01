@@ -308,13 +308,13 @@ def get_deducted_taxes():
 	return frappe.db.sql_list("select name from `tabPurchase Taxes and Charges` where add_deduct_tax = 'Deduct'")
 
 def add_total_row(data, filters, prev_group_by_value, item, total_row_map,
-	group_by_field, subtotal_display_field, grand_total, tax_columns):
+	group_by_field, subtotal_display_field, grand_total):
 	if prev_group_by_value != item.get(group_by_field, ''):
 		if prev_group_by_value:
 			total_row = total_row_map.get(prev_group_by_value)
 			data.append(total_row)
 			data.append({})
-			add_sub_total_row(total_row, total_row_map, 'total_row', tax_columns)
+			add_sub_total_row(total_row, total_row_map, 'total_row')
 
 		prev_group_by_value = item.get(group_by_field, '')
 
@@ -372,17 +372,13 @@ def get_group_by_and_display_fields(filters):
 
 	return group_by_field, subtotal_display_field
 
-def add_sub_total_row(item, total_row_map, group_by_value, tax_columns):
+def add_sub_total_row(item, total_row_map, group_by_value):
 	total_row = total_row_map.get(group_by_value)
 	total_row['stock_qty'] += item['stock_qty']
 	total_row['amount'] += item['amount']
 	total_row['total_tax'] += item['total_tax']
 	total_row['total'] += item['total']
 	total_row['percent_gt'] += item['percent_gt']
-
-	for tax in tax_columns:
-		total_row.setdefault(frappe.scrub(tax + ' Amount'), 0.0)
-		total_row[frappe.scrub(tax + ' Amount')] += flt(item[frappe.scrub(tax + ' Amount')])
 
 
 
