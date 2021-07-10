@@ -307,14 +307,115 @@ def get_grand_total(filters, doctype):
 def get_deducted_taxes():
 	return frappe.db.sql_list("select name from `tabPurchase Taxes and Charges` where add_deduct_tax = 'Deduct'")
 
+def get_tax_accounts(item_list, columns, company_currency,
+		doctype="Sales Invoice", tax_doctype="Sales Taxes and Charges"):
+	import json
+	item_row_map = {}
+	tax_columns = []
+	invoice_item_row = {}
+	itemised_tax = {}
+
+	tax_amount_precision = get_field_precision(frappe.get_meta(tax_doctype).get_field("tax_amount"),
+		currency=company_currency) or 2
+
+	for d in item_list:
+		invoice_item_row.setdefault(d.parent, []).append(d)
+		item_row_map.setdefault(d.parent, {}).setdefault(d.item_code or d.item_name, []).append(d)
+
+	conditions = ""
+	if doctype == "Purchase Invoice":
+		conditions = " and category in ('Total', 'Valuation and Total') and base_tax_amount_after_discount_amount != 0"
+
+	deducted_tax = get_deducted_taxes()
+	tax_details = frappe.db.sql("""
+		select
+			name, parent, description, item_wise_tax_detail,
+			charge_type, base_tax_amount_after_discount_amount
+		from `tab%s`
+		where
+			parenttype = %s and docstatus = 1
+			and (description is not null and description != '')
+			and parent in (%s)
+			%s
+		order by description
+	""" % (tax_doctype, '%s', ', '.join(['%s']*len(invoice_item_row)), conditions),
+		tuple([doctype] + list(invoice_item_row)))
+
+	for name, parent, description, item_wise_tax_detail, charge_type, tax_amount in tax_details:
+		description = handle_html(description)
+		if description not in tax_columns and tax_amount:
+			# as description is text editor earlier and markup can break the column convention in reports
+			tax_columns.append(description)
+
+		if item_wise_tax_detail:
+			try:
+				item_wise_tax_detail = json.loads(item_wise_tax_detail)
+
+				for item_code, tax_data in item_wise_tax_detail.items():
+					itemised_tax.setdefault(item_code, frappe._dict())
+
+					if isinstance(tax_data, list):
+						tax_rate, tax_amount = tax_data
+					else:
+						tax_rate = tax_data
+						tax_amount = 0
+
+					if charge_type == "Actual" and not tax_rate:
+						tax_rate = "NA"
+
+					item_net_amount = sum([flt(d.base_net_amount)
+						for d in item_row_map.get(parent, {}).get(item_code, [])])
+
+					for d in item_row_map.get(parent, {}).get(item_code, []):
+						item_tax_amount = flt((tax_amount * d.base_net_amount) / item_net_amount) \
+							if item_net_amount else 0
+						if item_tax_amount:
+							tax_value = flt(item_tax_amount, tax_amount_precision)
+							tax_value = (tax_value * -1
+								if (doctype == 'Purchase Invoice' and name in deducted_tax) else tax_value)
+
+							itemised_tax.setdefault(d.name, {})[description] = frappe._dict({
+								"tax_rate": tax_rate,
+								"tax_amount": tax_value
+							})
+
+			except ValueError:
+				continue
+		elif charge_type == "Actual" and tax_amount:
+			for d in invoice_item_row.get(parent, []):
+				itemised_tax.setdefault(d.name, {})[description] = frappe._dict({
+					"tax_rate": "NA",
+					"tax_amount": flt((tax_amount * d.base_net_amount) / d.base_net_total,
+						tax_amount_precision)
+				})
+
+	tax_columns.sort()
+	for desc in tax_columns:
+		columns.append({
+			'label': _(desc + ' Rate'),
+			'fieldname': frappe.scrub(desc + ' Rate'),
+			'fieldtype': 'Float',
+			'width': 100
+		})
+
+		columns.append({
+			'label': _(desc + ' Amount'),
+			'fieldname': frappe.scrub(desc + ' Amount'),
+			'fieldtype': 'Currency',
+			'options': 'currency',
+			'width': 100
+		})
+
+	return itemised_tax, tax_columns
+
 def add_total_row(data, filters, prev_group_by_value, item, total_row_map,
-	group_by_field, subtotal_display_field, grand_total):
+	group_by_field, subtotal_display_field, grand_total, tax_columns=None):
 	if prev_group_by_value != item.get(group_by_field, ''):
 		if prev_group_by_value:
 			total_row = total_row_map.get(prev_group_by_value)
 			data.append(total_row)
 			data.append({})
-			add_sub_total_row(total_row, total_row_map, 'total_row')
+			add_sub_total_row(total_row, total_row_map, 'total_row', tax_columns)
 
 		prev_group_by_value = item.get(group_by_field, '')
 
@@ -372,7 +473,7 @@ def get_group_by_and_display_fields(filters):
 
 	return group_by_field, subtotal_display_field
 
-def add_sub_total_row(item, total_row_map, group_by_value):
+def add_sub_total_row(item, total_row_map, group_by_value, tax_columns=None):
 	total_row = total_row_map.get(group_by_value)
 	total_row['stock_qty'] += item['stock_qty']
 	total_row['amount'] += item['amount']
@@ -380,6 +481,7 @@ def add_sub_total_row(item, total_row_map, group_by_value):
 	total_row['total'] += item['total']
 	total_row['percent_gt'] += item['percent_gt']
 
-
-
-
+	if tax_columns:
+		for tax in tax_columns:
+			total_row.setdefault(frappe.scrub(tax + ' Amount'), 0.0)
+			total_row[frappe.scrub(tax + ' Amount')] += flt(item[frappe.scrub(tax + ' Amount')])
