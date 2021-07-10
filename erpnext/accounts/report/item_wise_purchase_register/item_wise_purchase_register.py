@@ -6,7 +6,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import flt
 from erpnext.accounts.report.sales_register_by_item.sales_register_by_item import (get_tax_accounts,
-	get_grand_total, add_total_row, get_display_value, get_group_by_and_display_fields, add_sub_total_row,
+	get_grand_total, add_total_row, get_group_by_and_display_fields, add_sub_total_row,
 	get_group_by_conditions)
 
 def execute(filters=None):
