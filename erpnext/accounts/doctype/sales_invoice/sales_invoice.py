@@ -1594,21 +1594,16 @@ def get_item_details(item_code):
 
 @frappe.whitelist()
 def email_coas(docname):
-	sales_invoice = frappe.get_doc("Sales Invoice", docname).as_dict()
+	sales_invoice = frappe.get_doc("Sales Invoice", docname)
+	attachments = []
 	if not sales_invoice.get("contact_email"):
 		frappe.throw(_("No contact email found"))
 	for item in sales_invoice.get('items'):
 		item.certificate_of_analysis = frappe.db.get_value("Batch", item.batch_no, "certificate_of_analysis")
-		
-	coas = [item.get("certificate_of_analysis") for item in sales_invoice.get("items")
-		if item.get("certificate_of_analysis")]
-
-	if not coas:
-		frappe.msgprint(_("No Certificates of Analysis attached"))
-		return
-
-	attachments = []
-	for item in sales_invoice.get("items"):
+		coas = item.get("certificate_of_analysis")
+		if not coas:
+			frappe.msgprint(_("No Certificates of Analysis attached"))
+			return
 		coa_file_id = frappe.db.get_value("File", {"file_url": item.certificate_of_analysis}, "name")
 		attachments.append({"fid": coa_file_id})
 
