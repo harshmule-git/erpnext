@@ -97,7 +97,7 @@ class Strain(Document):
 					429: "The limit of API calls allowed has been exceeded for METRC. Please pace the usage rate of API more apart",
 					500: "METRC Internal server error"
 				}
-        		frappe.msgprint(response_message.get(bloomtrace_response.status_code))
+				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
 		except HTTPError as http_err:
 			frappe.msgprint("HTTP error occurred: {0}".format(http_err))
 		except Exception as err:
