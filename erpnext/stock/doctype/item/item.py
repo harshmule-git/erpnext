@@ -5,8 +5,6 @@ from __future__ import unicode_literals
 
 import itertools
 import json
-
-from requests import exceptions
 import erpnext
 import frappe
 import copy
@@ -950,6 +948,8 @@ class Item(WebsiteGenerator):
 					500: "METRC Internal server error"
 				}
 				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
+		except HTTPError as http_err:
+			frappe.msgprint("HTTP error occurred: {0}".format(http_err))
 		except Exception as err:
 			frappe.msgprint("Failed to create item on metrc: {0}".format(err))
 
