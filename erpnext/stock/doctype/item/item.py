@@ -934,7 +934,7 @@ class Item(WebsiteGenerator):
 					"company": "Bloom91"
 				}
 			}
-			# create a strain on the bloomtrace
+			# create a item on the bloomtrace
 			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/create-item', json=request_data)
 			# check if response coming from requests is successful or not.
 			if bloomtrace_response.status_code in [200, 201]:
