@@ -197,6 +197,12 @@ frappe.ui.form.on("Item", {
 			frm.set_value("description", frm.doc.item_code);
 	},
 
+	item_name: function(frm) {
+		if(!frm.doc.metrc_item_name){
+			frm.set_value("metrc_item_name", frm.doc.item_name);
+		}
+	},
+
 	is_stock_item: function(frm) {
 		if(!frm.doc.is_stock_item) {
 			frm.set_value("has_batch_no", 0);

@@ -932,6 +932,21 @@ class Item(WebsiteGenerator):
 					"company": "Bloom91"
 				}
 			}
+			# for item_category which requires strain
+			if self.strain_name:
+				request_data['doctype_data']['strain'] = self.strain_name
+
+			item_category = frappe.db.get("Compliance Item Category", self.metrc_item_category, ['quantity_type', 'mandatory_unit'])
+
+			# setting the unit uom and unit value as per the countbased quantity type
+			if item_category.get('quantity_type') == "CountBased":
+				if item_category.get('mandatory_unit') == "Volume": 
+					request_data['doctype_data']['unit_volume'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_volume_uom'] = self.metrc_unit_uom
+				if item_category.get('mandatory_unit') == "Weight": 
+					request_data['doctype_data']['unit_weight'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_weight_uom'] = self.metrc_unit_uom
+					
 			# create a item on the bloomtrace
 			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/create-item', json=request_data)
 			# check if response coming from requests is successful or not.
