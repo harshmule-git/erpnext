@@ -78,6 +78,7 @@
   "cb_metrc",
   "metrc_uom",
   "metrc_unit_uom",
+  "strain_name",
   "bloomtrace_id",
   "variants_section",
   "has_variants",
@@ -1155,6 +1156,7 @@
    "fieldname": "metrc_id",
    "fieldtype": "Data",
    "in_global_search": 1,
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "METRC ID",
    "read_only": 1
@@ -1195,7 +1197,7 @@
   },
   {
    "fieldname": "metrc_unit_uom",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "METRC Unit UOM",
    "options": "Compliance UOM"
   },
@@ -1204,6 +1206,12 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Bloomtrace ID"
+  },
+  {
+   "fieldname": "strain_name",
+   "fieldtype": "Link",
+   "label": "Strain Name",
+   "options": "Strain"
   }
  ],
  "has_web_view": 1,
@@ -1211,7 +1219,7 @@
  "idx": 2,
  "image_field": "image",
  "max_attachments": 1,
- "modified": "2021-09-02 03:44:14.753679",
+ "modified": "2021-09-14 03:31:12.163933",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
