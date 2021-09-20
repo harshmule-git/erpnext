@@ -294,6 +294,8 @@ auto_cancel_exempt_doctypes = ["Payment Entry"]
 scheduler_events = {
 	"all": [
 		"erpnext.projects.doctype.project.project.project_status_update_reminder",
+		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.set_appointment_reminder",
+		"erpnext.agriculture.doctype.strain.strain.execute_bloomtrace_integration_request",
 		"erpnext.agriculture.doctype.harvest.harvest.execute_bloomtrace_integration_request",
 		"erpnext.stock.doctype.package_tag.package_tag.execute_bloomtrace_integration_request",
 		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.set_appointment_reminder",
