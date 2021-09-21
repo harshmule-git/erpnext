@@ -238,7 +238,10 @@ doc_events = {
 		"on_cancel": "erpnext.stock.doctype.material_request.material_request.update_completed_and_requested_qty"
 	},
 	"User": {
-		"after_insert": "frappe.contacts.doctype.contact.contact.update_contact",
+		"after_insert": [
+			"frappe.contacts.doctype.contact.contact.update_contact",
+			"erpnext.compliance.utils.update_bloomtrace_user"
+		],
 		"validate": "erpnext.hr.doctype.employee.employee.validate_employee_role",
 		"on_update": ["erpnext.hr.doctype.employee.employee.update_user_permissions",
 			"erpnext.portal.utils.set_default_role"]
@@ -304,6 +307,7 @@ scheduler_events = {
 		"erpnext.stock.doctype.stock_reconciliation.stock_reconciliation.execute_bloomtrace_integration_request",
 		"erpnext.stock.doctype.stock_entry.stock_entry.execute_bloomtrace_integration_request",
 		"erpnext.agriculture.doctype.plant_additive_log.plant_additive_log.execute_bloomtrace_integration_request",
+		"erpnext.compliance.utils.execute_bloomtrace_integration_request_for_user",
 		"erpnext.stock.doctype.item.item.execute_bloomtrace_integration_request"
 	],
 	"hourly": [
