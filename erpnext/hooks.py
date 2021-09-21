@@ -308,6 +308,7 @@ scheduler_events = {
 	"all": [
 		"erpnext.projects.doctype.project.project.project_status_update_reminder",
 		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.set_appointment_reminder",
+		"erpnext.stock.doctype.delivery_note.delivery_note.execute_bloomtrace_integration_request",
 		"erpnext.agriculture.doctype.plant.plant.execute_bloomtrace_integration_request",
 		"erpnext.agriculture.doctype.plant_batch.plant_batch.execute_bloomtrace_integration_request",
 		"erpnext.agriculture.doctype.strain.strain.execute_bloomtrace_integration_request",
