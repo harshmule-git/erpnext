@@ -8,6 +8,7 @@ import json
 import erpnext
 import frappe
 import copy
+import requests
 from erpnext.controllers.item_variant import (ItemVariantExistsError,
 		copy_attributes_to_variant, get_variant, make_variant_item_code, validate_item_variant_attributes)
 from erpnext.setup.doctype.item_group.item_group import (get_parent_item_groups, invalidate_cache_for)
@@ -26,6 +27,8 @@ from erpnext.utilities.utils import get_abbr
 from erpnext import get_default_company
 from erpnext.accounts.utils import get_company_default
 from erpnext.compliance.utils import make_integration_request, get_bloomtrace_client
+from requests.exceptions import HTTPError
+from datetime import datetime
 
 
 class DuplicateReorderRows(frappe.ValidationError):
@@ -134,6 +137,10 @@ class Item(WebsiteGenerator):
 		self.validate_valuation_method()
 		self.cant_change()
 		self.update_show_in_website()
+
+		# if metrc is enabled, calling the update to bloomtrace method
+		if self.enable_metrc:
+			self.update_to_bloomtrace()
 
 		if not self.get("__islocal"):
 			self.old_item_group = frappe.db.get_value(self.doctype, self.name, "item_group")
@@ -898,6 +905,77 @@ class Item(WebsiteGenerator):
 	def validate_valuation_method(self):
 		if self.is_new() and not self.valuation_method:
 			self.valuation_method = frappe.db.get_single_value("Stock Settings", "valuation_method")
+	
+	def update_to_bloomtrace(self):
+		"""
+		Create a new item on Bloomtrace via Bloomstack.
+		Args: 
+		
+		Returns: 
+			Successful Message to the User
+		"""
+		try:
+			now = datetime.now()
+			request_data = {
+				"site_url": "manufacturing.bloomstack.io",
+				"customer_name": "Bloomstack",
+				"company_name": "Bloomstack India",
+				"license_number": "A12-0000015-LIC",
+				"rest_method": "POST",
+				"environment": "sandbox",
+				"doctype": "Item",
+				"doctype_data": {
+					"name": self.metrc_item_name,
+					"item_category": self.metrc_item_category,    
+					"uom": self.metrc_uom,
+					"creation": now.strftime("%Y-%m-%dT%H:%M%z"),    
+					"modified": now.strftime("%Y-%m-%dT%H:%M%z"),
+					"modified_by": "neil@bloomstack.com",
+					"parent": None,
+					"parentfield": None,
+					"parenttype": None,
+					"idx": 0,
+					"docstatus": 0,
+					"company": "Bloom91"
+				}
+			}
+
+			# for item_category which requires strain
+			if self.strain_name:
+				request_data['doctype_data']['strain'] = self.strain_name
+				
+			# getting the item category from the Compliance Item Category for quantity type and mandatory unit
+			item_category = frappe.db.get("Compliance Item Category", self.metrc_item_category, ['quantity_type', 'mandatory_unit'])
+
+			# setting the unit uom and unit value as per the countbased quantity type
+			if item_category.get('quantity_type') == "CountBased":
+				if item_category.get('mandatory_unit') == "Volume": 
+					request_data['doctype_data']['unit_volume'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_volume_uom'] = self.metrc_unit_uom
+				if item_category.get('mandatory_unit') == "Weight": 
+					request_data['doctype_data']['unit_weight'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_weight_uom'] = self.metrc_unit_uom
+
+			# create am item on the bloomtrace
+			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/create-item', json=request_data)
+			# check if response coming from requests is successful or not.
+			if bloomtrace_response.status_code in [200, 201]:
+				response = json.loads(bloomtrace_response.content)
+				frappe.msgprint(response.get('message'))
+			else:
+				response_message = {
+					400: "An error has occurred while executing request for METRC",
+					401: "Invalid or no authentication provided for METRC",
+					403: "The authenticated user does not have access to the requested resource for METRC",
+					404: "The requested resource could not be found (incorrect or invalid URI) for METRC",
+					429: "The limit of API calls allowed has been exceeded for METRC. Please pace the usage rate of API more apart",
+					500: "METRC Internal server error"
+				}
+				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
+		except HTTPError as http_err:
+			frappe.msgprint("HTTP error occurred: {0}".format(http_err))
+		except Exception as err:
+			frappe.msgprint("Failed to create item on metrc: {0}".format(err))
 
 def get_timeline_data(doctype, name):
 	'''returns timeline data based on stock ledger entry'''

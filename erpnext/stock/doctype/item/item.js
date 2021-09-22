@@ -171,6 +171,10 @@ frappe.ui.form.on("Item", {
 		frm.trigger("toggle_metrc_fields_display");
 	},
 
+	metrc_item_category: (frm) => {
+		frm.trigger("toggle_metrc_fields_display");
+	},
+
 	toggle_metrc_fields_display: (frm) => {
 		if (frm.doc.metrc_uom) {
 			frappe.db.get_value("Compliance UOM", { "name": frm.doc.metrc_uom }, "quantity_type", (r) => {
@@ -180,11 +184,34 @@ frappe.ui.form.on("Item", {
 				}
 			});
 		}
+		if (frm.doc.metrc_item_category) {
+			let item_categories = [
+				"Flower", 
+				"Flower (packaged - each)", 
+				"Flower (packaged eighth - each)",
+				"Flower (packaged gram - each)", 
+				"Flower (packaged half ounce - each)", 
+				"Flower (packaged ounce - each)", 
+				"Flower (packaged quarter - each)",
+				"Fresh Cannabis Plant", 
+				"Immature Plant", 
+				"Kief", 
+				"Leaf", 
+				"Pre-Roll Flower", 
+				"Pre-Roll Leaf", 
+				"Seeds", 
+				"Seeds (each)"
+			]			
+			frm.toggle_display("strain_name", item_categories.includes(frm.doc.metrc_item_category));
+		}
 	},
 
 	item_name: (frm) => {
 		if (frm.is_new()) {
 			frm.trigger("build_item_code");
+		}
+		if(!frm.doc.metrc_item_name){
+			frm.set_value("metrc_item_name", frm.doc.item_name);
 		}
 	},
 
