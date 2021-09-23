@@ -8,6 +8,7 @@ import json
 import erpnext
 import frappe
 import copy
+import requests
 from erpnext.controllers.item_variant import (ItemVariantExistsError,
 		copy_attributes_to_variant, get_variant, make_variant_item_code, validate_item_variant_attributes)
 from erpnext.setup.doctype.item_group.item_group import (get_parent_item_groups, invalidate_cache_for)
@@ -25,6 +26,9 @@ from six import iteritems
 from erpnext.utilities.utils import get_abbr
 from erpnext import get_default_company
 from erpnext.accounts.utils import get_company_default
+from erpnext.compliance.utils import make_integration_request, get_bloomtrace_client
+from requests.exceptions import HTTPError
+from datetime import datetime
 
 
 class DuplicateReorderRows(frappe.ValidationError):
@@ -134,6 +138,10 @@ class Item(WebsiteGenerator):
 		self.cant_change()
 		self.update_show_in_website()
 
+		# if metrc is enabled, calling the update to bloomtrace method
+		if self.enable_metrc:
+			self.update_to_bloomtrace()
+
 		if not self.get("__islocal"):
 			self.old_item_group = frappe.db.get_value(self.doctype, self.name, "item_group")
 			self.old_website_item_groups = frappe.db.sql_list("""select item_group
@@ -146,6 +154,10 @@ class Item(WebsiteGenerator):
 		self.update_variants()
 		self.update_item_price()
 		self.update_variants_website_display()
+		self.create_integration_request()
+
+	def create_integration_request(self):
+		make_integration_request(self.doctype, self.name, "Item")
 
 	def validate_description(self):
 		'''Clean HTML description if set'''
@@ -893,6 +905,77 @@ class Item(WebsiteGenerator):
 	def validate_valuation_method(self):
 		if self.is_new() and not self.valuation_method:
 			self.valuation_method = frappe.db.get_single_value("Stock Settings", "valuation_method")
+	
+	def update_to_bloomtrace(self):
+		"""
+		Create a new item on Bloomtrace via Bloomstack.
+		Args: 
+		
+		Returns: 
+			Successful Message to the User
+		"""
+		try:
+			now = datetime.now()
+			request_data = {
+				"site_url": "manufacturing.bloomstack.io",
+				"customer_name": "Bloomstack",
+				"company_name": "Bloomstack India",
+				"license_number": "A12-0000015-LIC",
+				"rest_method": "POST",
+				"environment": "sandbox",
+				"doctype": "Item",
+				"doctype_data": {
+					"name": self.metrc_item_name,
+					"item_category": self.metrc_item_category,    
+					"uom": self.metrc_uom,
+					"creation": now.strftime("%Y-%m-%dT%H:%M%z"),    
+					"modified": now.strftime("%Y-%m-%dT%H:%M%z"),
+					"modified_by": "neil@bloomstack.com",
+					"parent": None,
+					"parentfield": None,
+					"parenttype": None,
+					"idx": 0,
+					"docstatus": 0,
+					"company": "Bloom91"
+				}
+			}
+
+			# for item_category which requires strain
+			if self.strain_name:
+				request_data['doctype_data']['strain'] = self.strain_name
+				
+			# getting the item category from the Compliance Item Category for quantity type and mandatory unit
+			item_category = frappe.db.get("Compliance Item Category", self.metrc_item_category, ['quantity_type', 'mandatory_unit'])
+
+			# setting the unit uom and unit value as per the countbased quantity type
+			if item_category.get('quantity_type') == "CountBased":
+				if item_category.get('mandatory_unit') == "Volume": 
+					request_data['doctype_data']['unit_volume'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_volume_uom'] = self.metrc_unit_uom
+				if item_category.get('mandatory_unit') == "Weight": 
+					request_data['doctype_data']['unit_weight'] = self.metrc_unit_value
+					request_data['doctype_data']['unit_weight_uom'] = self.metrc_unit_uom
+
+			# create am item on the bloomtrace
+			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/create-item', json=request_data)
+			# check if response coming from requests is successful or not.
+			if bloomtrace_response.status_code in [200, 201]:
+				response = json.loads(bloomtrace_response.content)
+				frappe.msgprint(response.get('message'))
+			else:
+				response_message = {
+					400: "An error has occurred while executing request for METRC",
+					401: "Invalid or no authentication provided for METRC",
+					403: "The authenticated user does not have access to the requested resource for METRC",
+					404: "The requested resource could not be found (incorrect or invalid URI) for METRC",
+					429: "The limit of API calls allowed has been exceeded for METRC. Please pace the usage rate of API more apart",
+					500: "METRC Internal server error"
+				}
+				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
+		except HTTPError as http_err:
+			frappe.msgprint("HTTP error occurred: {0}".format(http_err))
+		except Exception as err:
+			frappe.msgprint("Failed to create item on metrc: {0}".format(err))
 
 def get_timeline_data(doctype, name):
 	'''returns timeline data based on stock ledger entry'''
@@ -1246,3 +1329,134 @@ def create_material_request(source_name, target_doc=None):
 		target_doc.material_request_type = "Customer Provided"
 		target_doc.customer = doc.customer
 	return target_doc
+
+@frappe.whitelist()
+def autoname_item(item):
+	item = frappe._dict(json.loads(item))
+	item_code = autoname(item)
+	return item_code
+
+def autoname(item, method=None):
+	"""
+		Item Code = a + b + c + d + e, where
+			a = abbreviated Company; all caps.
+			b = abbreviated Brand; all caps.
+			c = abbreviated Item Group; all caps.
+			d = abbreviated Item Name; all caps.
+			e = variant ID number; has to be incremented.
+	"""
+
+	if not frappe.db.get_single_value("Stock Settings", "autoname_item"):
+		return
+
+	# Get abbreviations
+	item_group_abbr = get_abbr(item.item_group)
+	item_name_abbr = get_abbr(item.item_name, 3)
+	default_company = get_default_company()
+
+	if default_company:
+		company_abbr = get_company_default(default_company, "abbr")
+		brand_abbr = get_abbr(item.brand, max_length=len(company_abbr))
+		brand_abbr = brand_abbr if company_abbr != brand_abbr else None
+		params = list(filter(None, [company_abbr, brand_abbr, item_group_abbr, item_name_abbr]))
+		item_code = "-".join(params)
+	else:
+		brand_abbr = get_abbr(item.brand)
+		params = list(filter(None, [brand_abbr, item_group_abbr, item_name_abbr]))
+		item_code = "-".join(params)
+
+	# Get count
+	count = len(frappe.get_all("Item", filters={"name": ["like", "%{}%".format(item_code)]}))
+
+	if count > 0:
+		item_code = "-".join([item_code, cstr(count + 1)])
+
+	# Set item document name
+	item.name = item.item_code = item_code
+
+	if not method:
+		return item.item_code
+
+def execute_bloomtrace_integration_request():
+	frappe_client = get_bloomtrace_client()
+	if not frappe_client:
+		return
+
+	pending_requests = frappe.get_all("Integration Request", filters={
+		"status": ["IN", ["Queued", "Failed"]],
+		"reference_doctype": "Item",
+		"integration_request_service": "BloomTrace"
+	}, order_by="creation ASC", limit=50)
+
+	for request in pending_requests:
+		integration_request = frappe.get_doc("Integration Request", request.name)
+		item = frappe.get_doc("Item", integration_request.reference_docname)
+
+		try:
+			if not item.bloomtrace_id:
+				insert_compliance_item(item, frappe_client)
+			else:
+				update_compliance_item(item, frappe_client)
+
+			integration_request.error = ""
+			integration_request.status = "Completed"
+		except Exception as e:
+			integration_request.error = cstr(frappe.get_traceback())
+			integration_request.status = "Failed"
+
+		integration_request.save(ignore_permissions=True)
+
+
+def insert_compliance_item(item, frappe_client):
+	bloomtrace_compliance_item_dict = make_compliance_item(item)
+	bloomtrace_compliance_item = frappe_client.insert(bloomtrace_compliance_item_dict)
+	bloomtrace_id = bloomtrace_compliance_item.get('name')
+	frappe.db.set_value("Item", item.name, "bloomtrace_id", bloomtrace_id)
+
+
+def update_compliance_item(item, frappe_client):
+	bloomtrace_compliance_item_dict = make_compliance_item(item)
+	bloomtrace_compliance_item_dict.update({
+		"name": item.bloomtrace_id
+	})
+	frappe_client.update(bloomtrace_compliance_item_dict)
+
+
+def make_compliance_item(item):
+	bloomtrace_compliance_item_dict = {
+		"doctype": "Compliance Item",
+		"bloomstack_site": frappe.utils.get_host_name(),
+		"item_code": item.item_code,
+		"item_name": item.item_name,
+		"enable_metrc": item.enable_metrc,
+		"metrc_id": item.metrc_id,
+		"metrc_item_category": item.metrc_item_category,
+		"metrc_unit_value": item.metrc_unit_value,
+		"metrc_uom": item.metrc_uom,
+		"metrc_unit_uom": item.metrc_unit_uom
+	}
+	return bloomtrace_compliance_item_dict
+
+def metrc_item_category_query(doctype, txt, searchfield, start, page_len, filters):
+	metrc_uom = filters.get("metrc_uom")
+	quantity_type = frappe.db.get_value("Compliance UOM", metrc_uom, "quantity_type")
+
+	return frappe.get_all("Compliance Item Category", filters={"quantity_type": quantity_type}, as_list=1)
+
+
+def metrc_uom_query(doctype, txt, searchfield, start, page_len, filters):
+	metrc_item_category = filters.get("metrc_item_category")
+	quantity_type = frappe.db.get_value("Compliance Item Category", metrc_item_category, "quantity_type")
+
+	return frappe.get_all("Compliance UOM", filters={"quantity_type": quantity_type}, as_list=1)
+
+
+def metrc_unit_uom_query(doctype, txt, searchfield, start, page_len, filters):
+	metrc_item_category = filters.get("metrc_item_category")
+	mandatory_unit = frappe.db.get_value("Compliance Item Category", metrc_item_category, "mandatory_unit")
+
+	quantity_type = "VolumeBased"
+	if mandatory_unit == "Weight":
+		quantity_type = "WeightBased"
+
+	return frappe.get_all("Compliance UOM", filters={"quantity_type": quantity_type}, as_list=1)
