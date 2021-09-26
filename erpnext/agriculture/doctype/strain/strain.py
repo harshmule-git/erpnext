@@ -71,12 +71,12 @@ class Strain(Document):
 				frappe.msgprint(response.get('message'))
 			else:
 				response_message = {
-					400: "An error has occurred while executing request for METRC",
-					401: "Invalid or no authentication provided for METRC",
-					403: "The authenticated user does not have access to the requested resource for METRC",
-					404: "The requested resource could not be found (incorrect or invalid URI) for METRC",
-					429: "The limit of API calls allowed has been exceeded for METRC. Please pace the usage rate of API more apart",
-					500: "METRC Internal server error"
+					400: "An error has occurred while executing request for Bloomtrace",
+					401: "Invalid or no authentication provided for Bloomtrace",
+					403: "The authenticated user does not have access to the requested resource for Bloomtrace",
+					404: "The requested resource could not be found (incorrect or invalid URI) for Bloomtrace",
+					429: "The limit of API calls allowed has been exceeded for Bloomtrace. Please pace the usage rate of API more apart",
+					500: "Bloomtrace Internal server error"
 				}
 				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
 		except HTTPError as http_err:
