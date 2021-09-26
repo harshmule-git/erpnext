@@ -916,14 +916,15 @@ class Item(WebsiteGenerator):
 		"""
 		try:
 			now = datetime.now()
+			bloomtrace_settings = frappe.db.get("Bloomtrace Settings")
 			request_data = {
-				"site_url": "manufacturing.bloomstack.io",
-				"customer_name": "Bloomstack",
-				"company_name": "Bloomstack India",
-				"license_number": "A12-0000015-LIC",
+				"site_url": bloomtrace_settings.site_url,
+				"customer_name": bloomtrace_settings.customer_name,
+				"company_name": bloomtrace_settings.company_name,
+				"license_number": bloomtrace_settings.license_number,
 				"rest_method": "POST",
-				"environment": "sandbox",
-				"doctype": "Item",
+				"environment": bloomtrace_settings.environment,
+				"doctype": self.doctype,
 				"doctype_data": {
 					"name": self.metrc_item_name,
 					"item_category": self.metrc_item_category,    
@@ -957,7 +958,7 @@ class Item(WebsiteGenerator):
 					request_data['doctype_data']['unit_weight_uom'] = self.metrc_unit_uom
 
 			# create am item on the bloomtrace
-			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/create-item', json=request_data)
+			bloomtrace_response = requests.post(bloomtrace_settings.bloomtrace_url + '/create-item', json=request_data)
 			# check if response coming from requests is successful or not.
 			if bloomtrace_response.status_code in [200, 201]:
 				response = json.loads(bloomtrace_response.content)
