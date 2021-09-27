@@ -915,7 +915,7 @@ class Item(WebsiteGenerator):
 			Successful Message to the User
 		"""
 		try:
-			now = datetime.now()
+			data = self.as_dict()
 			request_data = {
 				"site_url": "manufacturing.bloomstack.io",
 				"customer_name": "Bloomstack",
@@ -923,22 +923,17 @@ class Item(WebsiteGenerator):
 				"license_number": "A12-0000015-LIC",
 				"rest_method": "POST",
 				"environment": "sandbox",
-				"doctype": "Item",
-				"doctype_data": {
-					"name": self.metrc_item_name,
-					"item_category": self.metrc_item_category,    
-					"uom": self.metrc_uom,
-					"creation": now.strftime("%Y-%m-%dT%H:%M%z"),    
-					"modified": now.strftime("%Y-%m-%dT%H:%M%z"),
-					"modified_by": "neil@bloomstack.com",
-					"parent": None,
-					"parentfield": None,
-					"parenttype": None,
-					"idx": 0,
-					"docstatus": 0,
-					"company": "Bloom91"
-				}
+				"doctype": self.doctype,
+				"doctype_data": data
 			}
+
+			# to map the metrc_item_name, metrc_uom, metrc_item_category
+			request_data['doctype_data']['name'] = self.metrc_item_name
+			request_data['doctype_data']['uom'] = self.metrc_uom
+			request_data['doctype_data']['item_category'] = self.metrc_item_category
+
+			# passing the hard coded modified_by
+			request_data['doctype_data']['modified_by'] = "neil@bloomstack.com"
 
 			# for item_category which requires strain
 			if self.strain_name:
@@ -964,12 +959,12 @@ class Item(WebsiteGenerator):
 				frappe.msgprint(response.get('message'))
 			else:
 				response_message = {
-					400: "An error has occurred while executing request for METRC",
-					401: "Invalid or no authentication provided for METRC",
-					403: "The authenticated user does not have access to the requested resource for METRC",
-					404: "The requested resource could not be found (incorrect or invalid URI) for METRC",
-					429: "The limit of API calls allowed has been exceeded for METRC. Please pace the usage rate of API more apart",
-					500: "METRC Internal server error"
+					400: "An error has occurred while executing request for Bloomtrace",
+					401: "Invalid or no authentication provided for Bloomtrace",
+					403: "The authenticated user does not have access to the requested resource for Bloomtrace",
+					404: "The requested resource could not be found (incorrect or invalid URI) for Bloomtrace",
+					429: "The limit of API calls allowed has been exceeded for Bloomtrace. Please pace the usage rate of API more apart",
+					500: "Bloomtrace Internal server error"
 				}
 				frappe.msgprint(response_message.get(bloomtrace_response.status_code))
 		except HTTPError as http_err:

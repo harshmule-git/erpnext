@@ -184,6 +184,7 @@ frappe.ui.form.on("Item", {
 				}
 			});
 		}
+		// to toggle the display for strain name based on the metrc_item_catgegory selected!
 		if (frm.doc.metrc_item_category) {
 			let item_categories = [
 				"Flower", 
