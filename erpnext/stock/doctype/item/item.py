@@ -932,9 +932,6 @@ class Item(WebsiteGenerator):
 			request_data['doctype_data']['uom'] = self.metrc_uom
 			request_data['doctype_data']['item_category'] = self.metrc_item_category
 
-			# passing the hard coded modified_by
-			request_data['doctype_data']['modified_by'] = "neil@bloomstack.com"
-
 			# for item_category which requires strain
 			if self.strain_name:
 				request_data['doctype_data']['strain'] = self.strain_name
