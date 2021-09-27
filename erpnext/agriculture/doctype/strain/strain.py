@@ -62,9 +62,6 @@ class Strain(Document):
 				"doctype_data": data
 			}
 
-			# passing the hard coded modified by value to bloomtrace 
-			request_data['doctype_data']['modified_by'] = "neil@bloomstack.com"
-
 			# create a strain on the bloomtrace
 			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/createstrain', json=request_data)
 			# check if response coming from requests is successful or not.
