@@ -1,0 +1,68 @@
+{
+ "creation": "2021-09-27 02:43:57.409604",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "site_url",
+  "customer_name",
+  "company_name",
+  "license",
+  "environment",
+  "bloomtrace_url"
+ ],
+ "fields": [
+  {
+   "fieldname": "site_url",
+   "fieldtype": "Data",
+   "label": "Site URL"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
+  },
+  {
+   "fieldname": "license",
+   "fieldtype": "Data",
+   "label": "License"
+  },
+  {
+   "fieldname": "environment",
+   "fieldtype": "Data",
+   "label": "Environment"
+  },
+  {
+   "fieldname": "bloomtrace_url",
+   "fieldtype": "Data",
+   "label": "Bloomtrace URL"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2021-09-27 02:43:57.409604",
+ "modified_by": "Administrator",
+ "module": "Setup",
+ "name": "Bloomtrace Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
