@@ -49,8 +49,6 @@ class Strain(Document):
 		now = datetime.now()
 		try:
 			data = self.as_dict()
-			data['owner'] = "neil@bloomstack.com"
-			data['modified_by'] = "neil@bloomstack.com"
 			request_data = {
 				"site_url": "manufacturing.bloomstack.io",
 				"customer_name": "Bloomstack",
@@ -60,9 +58,13 @@ class Strain(Document):
 				"rest_method": "POST",
 				"environment": "sandbox",
 				"rest_operation": "Strains Create",
-				"doctype": "Strain",
+				"doctype": self.doctype,
 				"doctype_data": data
 			}
+
+			# passing the hard coded modified by value to bloomtrace 
+			request_data['doctype_data']['modified_by'] = "neil@bloomstack.com"
+
 			# create a strain on the bloomtrace
 			bloomtrace_response = requests.post('https://bl2qu9obqb.execute-api.ap-south-1.amazonaws.com/dev/doctype/createstrain', json=request_data)
 			# check if response coming from requests is successful or not.
